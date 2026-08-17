@@ -1,0 +1,39 @@
+{
+  "name": "@archliquid/sdk",
+  "version": "0.1.0",
+  "description": "Typed integration SDK for ArchLiquid Solana programs",
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "dist",
+    "idl"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./idl/arch-curve": "./idl/arch_curve.json",
+    "./idl/arch-swap": "./idl/arch_swap.json",
+    "./idl/arch-locker": "./idl/arch_locker.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "dependencies": {
+    "@solana/kit": "7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "tsx": "4.23.1",
+    "typescript": "5.9.3"
+  }
+}
