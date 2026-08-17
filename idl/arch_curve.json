@@ -1,0 +1,2171 @@
+{
+  "address": "DX1hc4Ym12eny5n5EUkaRJjGtGmLJNXhsKsrBWaQbhQk",
+  "metadata": {
+    "name": "arch_curve",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "ArchLiquid-owned Solana launch curve"
+  },
+  "instructions": [
+    {
+      "name": "accept_admin",
+      "discriminator": [
+        112,
+        42,
+        45,
+        90,
+        116,
+        181,
+        13,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "pending_admin",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "activate_launch_config",
+      "discriminator": [
+        0,
+        169,
+        146,
+        9,
+        190,
+        54,
+        255,
+        195
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config"
+        },
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "protocol_config"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "buy_exact_base_out",
+      "discriminator": [
+        122,
+        161,
+        65,
+        178,
+        68,
+        116,
+        77,
+        81
+      ],
+      "accounts": [
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "trader_base_account",
+          "writable": true
+        },
+        {
+          "name": "trader_quote_account",
+          "writable": true
+        },
+        {
+          "name": "trader",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "base_amount_out",
+          "type": "u64"
+        },
+        {
+          "name": "max_quote_amount_in",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "buy_exact_quote_in",
+      "discriminator": [
+        198,
+        46,
+        21,
+        82,
+        180,
+        217,
+        232,
+        112
+      ],
+      "accounts": [
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "trader_base_account",
+          "writable": true
+        },
+        {
+          "name": "trader_quote_account",
+          "writable": true
+        },
+        {
+          "name": "trader",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "quote_amount_in",
+          "type": "u64"
+        },
+        {
+          "name": "min_base_amount_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claim_creator_fees",
+      "discriminator": [
+        0,
+        23,
+        125,
+        234,
+        156,
+        118,
+        134,
+        89
+      ],
+      "accounts": [
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "curve.base_mint",
+                "account": "Curve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "creator_quote_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_protocol_fees",
+      "discriminator": [
+        34,
+        142,
+        219,
+        112,
+        109,
+        54,
+        133,
+        23
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "curve.base_mint",
+                "account": "Curve"
+              }
+            ]
+          }
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "treasury_quote_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "create_curve",
+      "discriminator": [
+        169,
+        235,
+        221,
+        223,
+        65,
+        109,
+        120,
+        183
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config"
+        },
+        {
+          "name": "base_mint",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  97,
+                  115,
+                  101,
+                  45,
+                  109,
+                  105,
+                  110,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "arg",
+                "path": "launch_nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "curve"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "curve"
+              },
+              {
+                "kind": "const",
+                "value": [
+                  6,
+                  221,
+                  246,
+                  225,
+                  215,
+                  101,
+                  161,
+                  147,
+                  217,
+                  203,
+                  225,
+                  70,
+                  206,
+                  235,
+                  121,
+                  172,
+                  28,
+                  180,
+                  133,
+                  237,
+                  95,
+                  91,
+                  55,
+                  145,
+                  58,
+                  140,
+                  245,
+                  133,
+                  126,
+                  255,
+                  0,
+                  169
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "quote_mint"
+        },
+        {
+          "name": "metadata",
+          "writable": true
+        },
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "metadata_program",
+          "address": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "launch_nonce",
+          "type": "u64"
+        },
+        {
+          "name": "metadata",
+          "type": {
+            "defined": {
+              "name": "TokenMetadataInput"
+            }
+          }
+        },
+        {
+          "name": "metadata_commitment",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "create_launch_config",
+      "discriminator": [
+        5,
+        15,
+        61,
+        115,
+        1,
+        234,
+        195,
+        147
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  108,
+                  97,
+                  117,
+                  110,
+                  99,
+                  104,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "quote_mint"
+              },
+              {
+                "kind": "arg",
+                "path": "version"
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "protocol_config"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "version",
+          "type": "u16"
+        },
+        {
+          "name": "quote_kind",
+          "type": {
+            "defined": {
+              "name": "QuoteKind"
+            }
+          }
+        },
+        {
+          "name": "quote_mint",
+          "type": "pubkey"
+        },
+        {
+          "name": "parameters",
+          "type": {
+            "defined": {
+              "name": "LaunchParameters"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_protocol",
+      "discriminator": [
+        188,
+        233,
+        252,
+        106,
+        134,
+        146,
+        202,
+        91
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "program_data"
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "addresses",
+          "type": {
+            "defined": {
+              "name": "ProtocolAddresses"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "migrate_curve",
+      "discriminator": [
+        151,
+        254,
+        50,
+        13,
+        112,
+        235,
+        152,
+        72
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config"
+        },
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "base_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "swap_config"
+        },
+        {
+          "name": "arch_swap_pool",
+          "writable": true
+        },
+        {
+          "name": "arch_swap_base_vault",
+          "writable": true
+        },
+        {
+          "name": "arch_swap_quote_vault",
+          "writable": true
+        },
+        {
+          "name": "arch_swap_lp_mint",
+          "writable": true
+        },
+        {
+          "name": "arch_swap_initial_lp_token_account",
+          "writable": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "arch_swap_program",
+          "address": "4Tn8xQbHHe41Cx1yhVYD6bGapXjDSW9BUaLJyoieyARi",
+          "relations": [
+            "protocol_config"
+          ]
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "rent",
+          "address": "SysvarRent111111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "propose_admin",
+      "discriminator": [
+        121,
+        214,
+        199,
+        212,
+        87,
+        39,
+        117,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "protocol_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "new_admin",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "sell_exact_base_in",
+      "discriminator": [
+        116,
+        232,
+        182,
+        230,
+        194,
+        174,
+        30,
+        95
+      ],
+      "accounts": [
+        {
+          "name": "curve",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  117,
+                  114,
+                  118,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "base_mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "launch_config",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "base_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "quote_vault",
+          "writable": true,
+          "relations": [
+            "curve"
+          ]
+        },
+        {
+          "name": "trader_base_account",
+          "writable": true
+        },
+        {
+          "name": "trader_quote_account",
+          "writable": true
+        },
+        {
+          "name": "trader",
+          "signer": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": [
+        {
+          "name": "base_amount_in",
+          "type": "u64"
+        },
+        {
+          "name": "min_quote_amount_out",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "set_launches_enabled",
+      "discriminator": [
+        154,
+        154,
+        45,
+        27,
+        10,
+        192,
+        65,
+        216
+      ],
+      "accounts": [
+        {
+          "name": "protocol_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  111,
+                  116,
+                  111,
+                  99,
+                  111,
+                  108,
+                  45,
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "signer": true,
+          "relations": [
+            "protocol_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "enabled",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Curve",
+      "discriminator": [
+        191,
+        180,
+        249,
+        66,
+        180,
+        71,
+        51,
+        182
+      ]
+    },
+    {
+      "name": "LaunchConfig",
+      "discriminator": [
+        18,
+        161,
+        9,
+        224,
+        102,
+        145,
+        29,
+        94
+      ]
+    },
+    {
+      "name": "ProtocolConfig",
+      "discriminator": [
+        207,
+        91,
+        250,
+        28,
+        152,
+        179,
+        215,
+        209
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "CurveCreated",
+      "discriminator": [
+        207,
+        148,
+        202,
+        45,
+        236,
+        100,
+        171,
+        230
+      ]
+    },
+    {
+      "name": "CurveFeesClaimed",
+      "discriminator": [
+        134,
+        227,
+        212,
+        155,
+        241,
+        169,
+        9,
+        62
+      ]
+    },
+    {
+      "name": "CurveMigrated",
+      "discriminator": [
+        73,
+        99,
+        54,
+        46,
+        71,
+        35,
+        47,
+        242
+      ]
+    },
+    {
+      "name": "CurveTrade",
+      "discriminator": [
+        84,
+        229,
+        77,
+        39,
+        245,
+        87,
+        49,
+        105
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "DefaultAddress",
+      "msg": "address cannot be the default public key"
+    },
+    {
+      "code": 6001,
+      "name": "UnauthorizedInitializer",
+      "msg": "initializer is not the current program upgrade authority"
+    },
+    {
+      "code": 6002,
+      "name": "WrongProgramData",
+      "msg": "program-data account is not canonical for ArchCurve"
+    },
+    {
+      "code": 6003,
+      "name": "InvalidNativeMint",
+      "msg": "the configured SOL quote mint is not the canonical native mint"
+    },
+    {
+      "code": 6004,
+      "name": "DuplicateQuoteMint",
+      "msg": "SOL and USDC quote mints must be distinct"
+    },
+    {
+      "code": 6005,
+      "name": "UnauthorizedAdmin",
+      "msg": "admin signer is not authorized"
+    },
+    {
+      "code": 6006,
+      "name": "UnauthorizedPendingAdmin",
+      "msg": "pending admin signer is not authorized"
+    },
+    {
+      "code": 6007,
+      "name": "AdminUnchanged",
+      "msg": "new admin must differ from the current admin"
+    },
+    {
+      "code": 6008,
+      "name": "NoPendingAdmin",
+      "msg": "there is no pending admin"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidConfigVersion",
+      "msg": "launch config version must be nonzero"
+    },
+    {
+      "code": 6010,
+      "name": "WrongQuoteMint",
+      "msg": "launch config quote mint does not match the selected quote kind"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidVirtualReserves",
+      "msg": "virtual reserve parameters are invalid"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidTokenAllocation",
+      "msg": "sale and migration allocations must be nonzero and equal total supply"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidTokenDecimals",
+      "msg": "v1 launch tokens must use six decimals"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidFeeBps",
+      "msg": "fee basis points are invalid"
+    },
+    {
+      "code": 6015,
+      "name": "MathOverflow",
+      "msg": "checked arithmetic overflow"
+    },
+    {
+      "code": 6016,
+      "name": "MissingActiveLaunchConfig",
+      "msg": "both SOL and USDC launch configs must be active before enabling launches"
+    },
+    {
+      "code": 6017,
+      "name": "LaunchesDisabled",
+      "msg": "new launches are disabled"
+    },
+    {
+      "code": 6018,
+      "name": "InactiveLaunchConfig",
+      "msg": "the selected launch config is not active"
+    },
+    {
+      "code": 6019,
+      "name": "EmptyMetadataCommitment",
+      "msg": "metadata commitment cannot be empty"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidMetadataName",
+      "msg": "metadata name must contain 1 to 32 UTF-8 bytes"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidMetadataSymbol",
+      "msg": "metadata symbol must contain 1 to 10 UTF-8 bytes"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidMetadataUri",
+      "msg": "metadata URI must contain 1 to 200 UTF-8 bytes"
+    },
+    {
+      "code": 6023,
+      "name": "WrongMetadataAddress",
+      "msg": "metadata account is not the canonical Metaplex PDA"
+    },
+    {
+      "code": 6024,
+      "name": "MintSupplyMismatch",
+      "msg": "mint supply or curve-vault amount does not match the launch config"
+    },
+    {
+      "code": 6025,
+      "name": "AuthorityNotRevoked",
+      "msg": "mint and freeze authorities were not revoked"
+    },
+    {
+      "code": 6026,
+      "name": "WrongBaseMint",
+      "msg": "base mint does not match the curve"
+    },
+    {
+      "code": 6027,
+      "name": "WrongBaseVault",
+      "msg": "base vault does not match the curve"
+    },
+    {
+      "code": 6028,
+      "name": "WrongQuoteVault",
+      "msg": "quote vault does not match the curve"
+    },
+    {
+      "code": 6029,
+      "name": "CurveComplete",
+      "msg": "curve trading is closed after completion"
+    },
+    {
+      "code": 6030,
+      "name": "CurveMigrated",
+      "msg": "curve has already migrated"
+    },
+    {
+      "code": 6031,
+      "name": "ZeroTradeAmount",
+      "msg": "trade amount must be nonzero"
+    },
+    {
+      "code": 6032,
+      "name": "InvalidReserveState",
+      "msg": "curve reserve state is invalid"
+    },
+    {
+      "code": 6033,
+      "name": "InsufficientBaseLiquidity",
+      "msg": "curve has insufficient base liquidity"
+    },
+    {
+      "code": 6034,
+      "name": "InsufficientQuoteLiquidity",
+      "msg": "curve has insufficient quote liquidity"
+    },
+    {
+      "code": 6035,
+      "name": "SlippageExceeded",
+      "msg": "trade slippage limit was exceeded"
+    },
+    {
+      "code": 6036,
+      "name": "ZeroTradeOutput",
+      "msg": "trade output rounds to zero"
+    },
+    {
+      "code": 6037,
+      "name": "VaultBalanceBelowAccounting",
+      "msg": "a vault balance is below the curve's accounted assets"
+    },
+    {
+      "code": 6038,
+      "name": "UnexpectedVaultDelta",
+      "msg": "legacy SPL token transfer produced an unexpected vault delta"
+    },
+    {
+      "code": 6039,
+      "name": "NoFeesToClaim",
+      "msg": "there are no accrued fees to claim"
+    },
+    {
+      "code": 6040,
+      "name": "MigrationRequiresComplete",
+      "msg": "curve must complete before migration"
+    },
+    {
+      "code": 6041,
+      "name": "ZeroMigrationLiquidity",
+      "msg": "migration requires nonzero base and quote principal"
+    },
+    {
+      "code": 6042,
+      "name": "WrongArchSwapPool",
+      "msg": "ArchSwap pool is not the canonical base/quote PDA"
+    },
+    {
+      "code": 6043,
+      "name": "WrongArchSwapLpMint",
+      "msg": "ArchSwap LP mint is not the canonical pool LP mint PDA"
+    }
+  ],
+  "types": [
+    {
+      "name": "Curve",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "quote_kind",
+            "type": {
+              "defined": {
+                "name": "QuoteKind"
+              }
+            }
+          },
+          {
+            "name": "launch_nonce",
+            "type": "u64"
+          },
+          {
+            "name": "launch_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "virtual_base_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "virtual_quote_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "real_sale_base_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "real_quote_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "migration_base_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "token_total_supply",
+            "type": "u64"
+          },
+          {
+            "name": "creator_quote_fees",
+            "type": "u64"
+          },
+          {
+            "name": "protocol_quote_fees",
+            "type": "u64"
+          },
+          {
+            "name": "complete",
+            "type": "bool"
+          },
+          {
+            "name": "migrated",
+            "type": "bool"
+          },
+          {
+            "name": "arch_swap_pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "metadata_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "created_slot",
+            "type": "u64"
+          },
+          {
+            "name": "created_unix_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "curve",
+            "type": "pubkey"
+          },
+          {
+            "name": "launch_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_vault",
+            "type": "pubkey"
+          },
+          {
+            "name": "token_total_supply",
+            "type": "u64"
+          },
+          {
+            "name": "metadata_commitment",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "created_slot",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveFeesClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "curve",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "fee_kind",
+            "type": {
+              "defined": {
+                "name": "FeeKind"
+              }
+            }
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveMigrated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "curve",
+            "type": "pubkey"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "base_amount",
+            "type": "u64"
+          },
+          {
+            "name": "quote_amount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CurveTrade",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "curve",
+            "type": "pubkey"
+          },
+          {
+            "name": "trader",
+            "type": "pubkey"
+          },
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "TradeSide"
+              }
+            }
+          },
+          {
+            "name": "base_amount",
+            "type": "u64"
+          },
+          {
+            "name": "gross_quote_amount",
+            "type": "u64"
+          },
+          {
+            "name": "user_quote_amount",
+            "type": "u64"
+          },
+          {
+            "name": "creator_fee",
+            "type": "u64"
+          },
+          {
+            "name": "protocol_fee",
+            "type": "u64"
+          },
+          {
+            "name": "complete",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FeeKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Creator"
+          },
+          {
+            "name": "Protocol"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LaunchConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "schema_version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "config_version",
+            "type": "u16"
+          },
+          {
+            "name": "quote_kind",
+            "type": {
+              "defined": {
+                "name": "QuoteKind"
+              }
+            }
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "parameters",
+            "type": {
+              "defined": {
+                "name": "LaunchParameters"
+              }
+            }
+          },
+          {
+            "name": "created_by",
+            "type": "pubkey"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "LaunchParameters",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "initial_virtual_base_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "initial_virtual_quote_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "initial_sale_base_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "migration_base_reserves",
+            "type": "u64"
+          },
+          {
+            "name": "token_total_supply",
+            "type": "u64"
+          },
+          {
+            "name": "token_decimals",
+            "type": "u8"
+          },
+          {
+            "name": "curve_total_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "curve_creator_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "amm_reinvest_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "amm_protocol_fee_bps",
+            "type": "u16"
+          },
+          {
+            "name": "amm_creator_fee_bps",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolAddresses",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "sol_quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "arch_swap_program",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProtocolConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "pending_admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "sol_quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "arch_swap_program",
+            "type": "pubkey"
+          },
+          {
+            "name": "active_sol_launch_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "active_usdc_launch_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "launches_enabled",
+            "type": "bool"
+          },
+          {
+            "name": "reserved",
+            "type": {
+              "array": [
+                "u8",
+                64
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "QuoteKind",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Sol"
+          },
+          {
+            "name": "Usdc"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenMetadataInput",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TradeSide",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Buy"
+          },
+          {
+            "name": "Sell"
+          }
+        ]
+      }
+    }
+  ]
+}
