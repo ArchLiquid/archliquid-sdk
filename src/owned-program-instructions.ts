@@ -101,7 +101,7 @@ const SELL_EXACT_BASE_IN_ARGS = [
 export const OWNED_SOLANA_PROGRAMS = {
   archCurve: {
     programAddress: ARCH_CURVE_PROGRAM_ADDRESS,
-    idlSha256: "4a64eb0f98b9d5a7f9cfde16d6ffb2dc36ebf3c8a1f67ead9f6a33f1107af325",
+    idlSha256: "fde22f26875647a07a030e94c12492097c28ed4a8cc243f1e5b380b827ef4a7a",
     instructions: {
       create_curve: {
         discriminator: [169, 235, 221, 223, 65, 109, 120, 183],
@@ -213,7 +213,7 @@ export const OWNED_SOLANA_PROGRAMS = {
   },
   archSwap: {
     programAddress: ARCH_SWAP_PROGRAM_ADDRESS,
-    idlSha256: "f08221c8bfaf851ddfc7f4826cf0aa67d2e77ee0835dbfa5e5d77c1e0b2d2b92",
+    idlSha256: "90c5b2a6aedfb3d4393724f4ecb80b7e805051a74d7d3d7a7fc7236860757cda",
     instructions: {
       buy_exact_base_out: {
         discriminator: [122, 161, 65, 178, 68, 116, 77, 81],

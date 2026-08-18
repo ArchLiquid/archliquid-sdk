@@ -55,9 +55,9 @@ function replaceAccount(instruction: Instruction, index: number, value: string):
 
 test("IDL identities and committed hashes match the governed programs", async () => {
   const fixtures = [
-    ["arch_curve", ARCH_CURVE_PROGRAM_ADDRESS, "4a64eb0f98b9d5a7f9cfde16d6ffb2dc36ebf3c8a1f67ead9f6a33f1107af325"],
-    ["arch_swap", ARCH_SWAP_PROGRAM_ADDRESS, "f08221c8bfaf851ddfc7f4826cf0aa67d2e77ee0835dbfa5e5d77c1e0b2d2b92"],
-    ["arch_locker", ARCH_LOCKER_PROGRAM_ADDRESS, "a0e10490745cec9e80476307827cf216576cf66e6a1c5828b9e32a56f40bbece"],
+    ["arch_curve", ARCH_CURVE_PROGRAM_ADDRESS, "fde22f26875647a07a030e94c12492097c28ed4a8cc243f1e5b380b827ef4a7a"],
+    ["arch_swap", ARCH_SWAP_PROGRAM_ADDRESS, "90c5b2a6aedfb3d4393724f4ecb80b7e805051a74d7d3d7a7fc7236860757cda"],
+    ["arch_locker", ARCH_LOCKER_PROGRAM_ADDRESS, "7a85db8b97aa37142c95dc971300d2094b4a4aaa405287fba9da16d4c8440070"],
   ] as const;
   for (const [name, expectedAddress, expectedHash] of fixtures) {
     const bytes = await readFile(new URL(`../idl/${name}.json`, import.meta.url));
