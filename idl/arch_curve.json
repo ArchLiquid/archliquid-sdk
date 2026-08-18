@@ -1,5 +1,5 @@
 {
-  "address": "DX1hc4Ym12eny5n5EUkaRJjGtGmLJNXhsKsrBWaQbhQk",
+  "address": "92JEvT5DH8BA8XiGPrNkdHZX5iQvYdxy1PVNayGJAmgn",
   "metadata": {
     "name": "arch_curve",
     "version": "0.1.0",
@@ -1078,7 +1078,7 @@
         },
         {
           "name": "arch_swap_program",
-          "address": "4Tn8xQbHHe41Cx1yhVYD6bGapXjDSW9BUaLJyoieyARi",
+          "address": "EDcuTEaN8RXBch6ddx2gF7J9xRAqG5uCP2vtJS8C7HHq",
           "relations": [
             "protocol_config"
           ]
