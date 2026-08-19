@@ -1,9 +1,9 @@
 import { address } from "@solana/kit";
 
 export const SOLANA_DEVNET_GENESIS_HASH = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
-export const ARCH_CURVE_PROGRAM_ADDRESS = address("DX1hc4Ym12eny5n5EUkaRJjGtGmLJNXhsKsrBWaQbhQk");
-export const ARCH_SWAP_PROGRAM_ADDRESS = address("4Tn8xQbHHe41Cx1yhVYD6bGapXjDSW9BUaLJyoieyARi");
-export const ARCH_LOCKER_PROGRAM_ADDRESS = address("6K1jwGGQBGZMYCe6zcxDN3LV46yANcQaTh2wf3c2gfBi");
+export const ARCH_CURVE_PROGRAM_ADDRESS = address("92JEvT5DH8BA8XiGPrNkdHZX5iQvYdxy1PVNayGJAmgn");
+export const ARCH_SWAP_PROGRAM_ADDRESS = address("EDcuTEaN8RXBch6ddx2gF7J9xRAqG5uCP2vtJS8C7HHq");
+export const ARCH_LOCKER_PROGRAM_ADDRESS = address("2jDqQUZY7yidwa8DTQm6vyFcptFPZ4QhxJn5ePGpgd2p");
 export const SPL_TOKEN_PROGRAM_ADDRESS = address("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
 export const ASSOCIATED_TOKEN_PROGRAM_ADDRESS = address("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 export const SYSTEM_PROGRAM_ADDRESS = address("11111111111111111111111111111111");

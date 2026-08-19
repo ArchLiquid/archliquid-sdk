@@ -55,9 +55,9 @@ function replaceAccount(instruction: Instruction, index: number, value: string):
 
 test("IDL identities and committed hashes match the governed programs", async () => {
   const fixtures = [
-    ["arch_curve", ARCH_CURVE_PROGRAM_ADDRESS, "fde22f26875647a07a030e94c12492097c28ed4a8cc243f1e5b380b827ef4a7a"],
-    ["arch_swap", ARCH_SWAP_PROGRAM_ADDRESS, "90c5b2a6aedfb3d4393724f4ecb80b7e805051a74d7d3d7a7fc7236860757cda"],
-    ["arch_locker", ARCH_LOCKER_PROGRAM_ADDRESS, "7a85db8b97aa37142c95dc971300d2094b4a4aaa405287fba9da16d4c8440070"],
+    ["arch_curve", ARCH_CURVE_PROGRAM_ADDRESS, "a34bc24187016e2215dc098ad2f7016bf69e4f2b5297aa30328b9d25b80e6e33"],
+    ["arch_swap", ARCH_SWAP_PROGRAM_ADDRESS, "d36c34fd3ba3beb11e12fcbc15edee76a164b149987c69c50330cb8c036f5e4d"],
+    ["arch_locker", ARCH_LOCKER_PROGRAM_ADDRESS, "4281c7c62244928c5ecf2fcc266f3f036547ac1dc1a437bddf6bbfedc1b1061c"],
   ] as const;
   for (const [name, expectedAddress, expectedHash] of fixtures) {
     const bytes = await readFile(new URL(`../idl/${name}.json`, import.meta.url));
@@ -67,13 +67,13 @@ test("IDL identities and committed hashes match the governed programs", async ()
   }
 });
 
-test("derives the deployed canary pool and LP mint exactly", async () => {
+test("derives fresh-release pool and LP mint addresses exactly", async () => {
   const base = address("ErogPFvGsinQukiVfqvihsdo1CVAjTV11X6aW1QTgQLb");
   const quote = address("So11111111111111111111111111111111111111112");
   const pool = await derivePoolAddress(base, quote);
   const lpMint = await derivePoolLpMintAddress(pool.address);
-  assert.equal(pool.address, "GmKjRrTCvmtZAg37oD314x1dtg64MAW27XFgc223iUgT");
-  assert.equal(lpMint.address, "85SWK59vHsVv8buEnSzhbLxnSe6o9g2Cca3JbMkSB427");
+  assert.equal(pool.address, "EHJVPjbSYc37i3FXsL8LaCJR1NEmCgm5XFM7cDw2Xh9E");
+  assert.equal(lpMint.address, "2c7ADRZDnCdfVwgixpjUsGUfPueoVAxLx3Cry7qHvrGv");
 });
 
 test("builds, decodes, and substitution-checks public LP instructions", () => {
