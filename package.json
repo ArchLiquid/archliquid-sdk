@@ -29,7 +29,7 @@
     "node": ">=20.18.0"
   },
   "dependencies": {
-    "@solana/kit": "7.0.0"
+    "@solana/kit": "8.4.0"
   },
   "devDependencies": {
     "@types/node": "26.2.0",
