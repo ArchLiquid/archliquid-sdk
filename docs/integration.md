@@ -255,6 +255,13 @@ returns `OwnedProgramError` or null. Custom error numbers are not globally uniqu
 identify the actual failing program, including CPI failures, before decoding.
 Do not infer a CPI's program from its top-level instruction alone.
 
+Custom codes and optional instruction indices accept `number` or `bigint`,
+including values returned by Kit's lossless RPC parser. Codes must fit an unsigned
+32-bit integer; indices must fit a nonnegative safe JavaScript integer. Invalid
+values return null. Decoded `code` and `instructionIndex` fields remain numbers,
+and the original cause is preserved. Direct `OwnedProgramError` construction and
+the existing `OwnedProgramErrorContext` type continue to use numeric indices.
+
 ```ts
 import { decodeOwnedTransactionEvents, assertCanonicalMigrationEventPair } from "@archliquid/sdk";
 const events = decodeOwnedTransactionEvents({ logMessages: metadata.logMessages, err: metadata.err });

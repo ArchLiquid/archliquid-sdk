@@ -25,6 +25,8 @@
 ### Integration
 
 - Add typed public instruction inputs, stable integration errors and program-qualified errors.
+- Decode program custom-error codes and instruction indices from either numbers
+  or lossless RPC `bigint` values, retaining number-valued error fields.
 - Add validated batched snapshots, devnet cluster verification and transaction
   plans that retain original user limits and independent intent.
 - Add exact amount/slippage helpers and bounded bigint quote serialization.
