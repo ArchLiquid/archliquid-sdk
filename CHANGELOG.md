@@ -4,6 +4,10 @@
 
 ### Reliability and security
 
+- Reject non-bigint quote amounts, reserves, share values and slippage limits
+  before arithmetic or comparisons, retaining the existing `overflow` error code.
+- Capture Locker creation/release inputs and copy lock account bytes before
+  asynchronous address derivation, preserving the validated request and decoded state.
 - Add complete instruction intent checks alongside the legacy schema/account assertion.
 - Accept valid unsynchronized WSOL surplus while rejecting insufficient backing
   and providing an explicit synchronization assertion.
@@ -46,8 +50,10 @@
 
 Existing instruction bytes, PDA derivations, deployment defaults, root exports
 and math error codes are preserved. Stricter validators reject malformed inputs
-previously accepted. Quote constructor results and revived quotes are deeply
-frozen. Serialization accepts plain data and rejects lossy JSON values.
+previously accepted. Quote and Locker integer inputs require primitive `bigint`
+values, and Locker creation requires a boolean permanent mode. Quote constructor
+results and revived quotes are deeply frozen. Serialization accepts plain data
+and rejects lossy JSON values.
 Snapshots/plans require same-instance SDK provenance and cannot be reconstructed
 from copies or serialization. The legacy instruction assertion retains its
 schema/account assurance.

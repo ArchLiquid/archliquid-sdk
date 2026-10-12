@@ -35,6 +35,12 @@ const MIN_I64 = -(1n << 63n);
 const MAX_I64 = (1n << 63n) - 1n;
 const addressEncoder = getAddressEncoder();
 const addressDecoder = getAddressDecoder();
+const typedArrayTag = Object.getOwnPropertyDescriptor(
+  Object.getPrototypeOf(Uint8Array.prototype), Symbol.toStringTag,
+)!.get!;
+const typedArrayLength = Object.getOwnPropertyDescriptor(
+  Object.getPrototypeOf(Uint8Array.prototype), "length",
+)!.get!;
 
 export type DecodedLiquidityLock = Readonly<{
   address: Address;
@@ -73,14 +79,14 @@ export function assertLiquidityLockVault(
 }
 
 function u64(value: bigint) {
-  if (value < 0n || value > MAX_U64) throw new Error("Value is outside u64 range");
+  if (typeof value !== "bigint" || value < 0n || value > MAX_U64) throw new Error("Value is outside u64 range");
   const bytes = new Uint8Array(8);
   new DataView(bytes.buffer).setBigUint64(0, value, true);
   return bytes;
 }
 
 function i64(value: bigint) {
-  if (value < MIN_I64 || value > MAX_I64) throw new Error("Timestamp is outside i64 range");
+  if (typeof value !== "bigint" || value < MIN_I64 || value > MAX_I64) throw new Error("Timestamp is outside i64 range");
   const bytes = new Uint8Array(8);
   new DataView(bytes.buffer).setBigInt64(0, value, true);
   return bytes;
@@ -112,13 +118,23 @@ export async function buildCreateSelfLiquidityLock(input: Readonly<{
   permanent: boolean;
   unlockAt: bigint;
 }>) {
-  const owner = address(input.owner);
-  const mint = address(input.mint);
-  if (input.amount <= 0n || input.amount > MAX_U64) throw new Error("Lock amount is invalid");
-  if (input.permanent && input.unlockAt !== 0n) throw new Error("Permanent lock timestamp must be zero");
-  if (!input.permanent && input.unlockAt <= 0n) throw new Error("Timed lock timestamp is invalid");
+  // Capture request values once. The caller may reuse its object while PDA
+  // derivations are pending; validation and instruction data must agree.
+  const { owner: ownerValue, mint: mintValue, amount, nonce, permanent, unlockAt } = input;
+  const owner = address(ownerValue);
+  const mint = address(mintValue);
+  if (typeof amount !== "bigint" || amount <= 0n || amount > MAX_U64) throw new Error("Lock amount is invalid");
+  if (typeof permanent !== "boolean") throw new Error("Lock mode is invalid");
+  const nonceBytes = u64(nonce);
+  const unlockAtBytes = i64(unlockAt);
+  if (permanent && unlockAt !== 0n) throw new Error("Permanent lock timestamp must be zero");
+  if (!permanent && unlockAt <= 0n) throw new Error("Timed lock timestamp is invalid");
+  const data = concat([
+    new Uint8Array(CREATE_LOCK_DISCRIMINATOR), nonceBytes, u64(amount),
+    new Uint8Array([permanent ? 1 : 0]), unlockAtBytes,
+  ]);
   const [lock, source] = await Promise.all([
-    deriveLiquidityLockAddress(owner, input.nonce),
+    deriveLiquidityLockAddress(owner, nonce),
     deriveAssociatedTokenAddress(owner, mint),
   ]);
   const vault = await deriveAssociatedTokenAddress(lock.address, mint);
@@ -136,13 +152,7 @@ export async function buildCreateSelfLiquidityLock(input: Readonly<{
       { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
       { address: SYSTEM_PROGRAM_ADDRESS, role: AccountRole.READONLY },
     ],
-    data: concat([
-      new Uint8Array(CREATE_LOCK_DISCRIMINATOR),
-      u64(input.nonce),
-      u64(input.amount),
-      new Uint8Array([input.permanent ? 1 : 0]),
-      i64(input.unlockAt),
-    ]),
+    data,
   };
   return Object.freeze({ instruction, lock: lock.address, vault: vault.address });
 }
@@ -170,16 +180,24 @@ export function buildMakeLiquidityLockPermanent(beneficiary: string, lock: strin
 }
 
 export async function buildReleaseLiquidityLock(releaser: string, lock: DecodedLiquidityLock): Promise<Instruction> {
-  const beneficiaryAccount = await deriveAssociatedTokenAddress(lock.beneficiary, lock.mint);
+  const { beneficiary: beneficiaryValue, depositor: depositorValue, mint: mintValue,
+    address: lockValue, vault: vaultValue } = lock;
+  const releaserAddress = address(releaser);
+  const beneficiary = address(beneficiaryValue);
+  const depositor = address(depositorValue);
+  const mint = address(mintValue);
+  const lockAddress = address(lockValue);
+  const vault = address(vaultValue);
+  const beneficiaryAccount = await deriveAssociatedTokenAddress(beneficiary, mint);
   return {
     programAddress: ARCH_LOCKER_PROGRAM_ADDRESS,
     accounts: [
-      { address: address(releaser), role: AccountRole.WRITABLE_SIGNER },
-      { address: lock.beneficiary, role: AccountRole.READONLY },
-      { address: lock.depositor, role: AccountRole.WRITABLE },
-      { address: lock.mint, role: AccountRole.READONLY },
-      { address: lock.address, role: AccountRole.WRITABLE },
-      { address: lock.vault, role: AccountRole.WRITABLE },
+      { address: releaserAddress, role: AccountRole.WRITABLE_SIGNER },
+      { address: beneficiary, role: AccountRole.READONLY },
+      { address: depositor, role: AccountRole.WRITABLE },
+      { address: mint, role: AccountRole.READONLY },
+      { address: lockAddress, role: AccountRole.WRITABLE },
+      { address: vault, role: AccountRole.WRITABLE },
       { address: beneficiaryAccount.address, role: AccountRole.WRITABLE },
       { address: SPL_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
       { address: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
@@ -199,26 +217,35 @@ export async function decodeLiquidityLock(input: Readonly<{
   data: ReadonlyUint8Array;
   slot: Slot;
 }>): Promise<DecodedLiquidityLock> {
-  if (address(input.owner) !== ARCH_LOCKER_PROGRAM_ADDRESS) throw new Error("Lock owner is invalid");
-  if (input.data.length !== LOCK_ACCOUNT_SIZE) throw new Error("Lock account size is invalid");
-  if (!LOCK_DISCRIMINATOR.every((value, index) => input.data[index] === value)) {
+  const { address: accountAddressValue, owner, data: sourceData, slot } = input;
+  if (address(owner) !== ARCH_LOCKER_PROGRAM_ADDRESS) throw new Error("Lock owner is invalid");
+  // Intrinsic brands accept real Uint8Arrays from other realms while ignoring
+  // spoofed toStringTag/length properties on other views or array-like objects.
+  if (!ArrayBuffer.isView(sourceData) || typedArrayTag.call(sourceData) !== "Uint8Array" ||
+      typedArrayLength.call(sourceData) !== LOCK_ACCOUNT_SIZE) {
+    throw new Error("Lock account size is invalid");
+  }
+  // Uint8Array construction copies Buffer inputs too; Buffer.slice() would
+  // retain a view into mutable caller storage across the asynchronous checks.
+  const data = new Uint8Array(sourceData);
+  if (!LOCK_DISCRIMINATOR.every((value, index) => data[index] === value)) {
     throw new Error("Lock account discriminator is invalid");
   }
-  const view = new DataView(input.data.buffer, input.data.byteOffset, input.data.byteLength);
-  const lockAddress = address(input.address);
-  const modeValue = input.data[10];
-  if (input.data[8] !== 1 || (modeValue !== 0 && modeValue !== 1)) {
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const lockAddress = address(accountAddressValue);
+  const modeValue = data[10];
+  if (data[8] !== 1 || (modeValue !== 0 && modeValue !== 1)) {
     throw new Error("Lock schema is unsupported");
   }
-  const depositor = readAddress(input.data, 11);
-  const beneficiary = readAddress(input.data, 43);
-  const mint = readAddress(input.data, 75);
-  const vault = readAddress(input.data, 107);
-  if (readAddress(input.data, 139) !== SPL_TOKEN_PROGRAM_ADDRESS) throw new Error("Lock token program is invalid");
+  const depositor = readAddress(data, 11);
+  const beneficiary = readAddress(data, 43);
+  const mint = readAddress(data, 75);
+  const vault = readAddress(data, 107);
+  if (readAddress(data, 139) !== SPL_TOKEN_PROGRAM_ADDRESS) throw new Error("Lock token program is invalid");
   const nonce = view.getBigUint64(171, true);
   const expectedLock = await deriveLiquidityLockAddress(depositor, nonce);
   const expectedVault = await deriveAssociatedTokenAddress(lockAddress, mint);
-  if (lockAddress !== expectedLock.address || input.data[9] !== expectedLock.bump) throw new Error("Lock PDA is invalid");
+  if (lockAddress !== expectedLock.address || data[9] !== expectedLock.bump) throw new Error("Lock PDA is invalid");
   if (vault !== expectedVault.address) throw new Error("Lock vault is invalid");
   const unlockAt = view.getBigInt64(195, true);
   if ((modeValue === 1) !== (unlockAt === 0n)) throw new Error("Lock mode and timestamp disagree");
@@ -229,13 +256,13 @@ export async function decodeLiquidityLock(input: Readonly<{
   if (modeValue === 0 && unlockAt < createdAt + MIN_LOCK_SECONDS) {
     throw new Error("Timed lock duration is invalid");
   }
-  if (input.data.slice(203).some((value) => value !== 0)) {
+  if (data.slice(203).some((value) => value !== 0)) {
     throw new Error("Lock reserved bytes are unsupported");
   }
   return Object.freeze({
     address: lockAddress,
     schemaVersion: 1,
-    bump: input.data[9]!,
+    bump: data[9]!,
     mode: modeValue === 0 ? "timed" : "permanent",
     depositor,
     beneficiary,
@@ -245,7 +272,7 @@ export async function decodeLiquidityLock(input: Readonly<{
     principalAmount,
     createdAt,
     unlockAt,
-    slot: input.slot,
+    slot,
   });
 }
 

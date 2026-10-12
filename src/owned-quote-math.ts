@@ -91,7 +91,7 @@ function fail(code: OwnedQuoteMathErrorCode): never {
 }
 
 function u64(value: bigint) {
-  if (value < 0n || value > MAX_U64) fail("overflow");
+  if (typeof value !== "bigint" || value < 0n || value > MAX_U64) fail("overflow");
   return value;
 }
 
