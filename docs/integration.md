@@ -43,6 +43,12 @@ Amounts, reserves, shares and slots use `bigint`; token values are base units.
 Never convert these values through JavaScript floating point. Token decimals
 come from validated mint data, not a symbol or an assumption.
 
+Raw quote calculations require primitive `bigint` amounts, reserves, shares and
+slippage limits within the unsigned-u64 range. Numbers (including `NaN`), strings,
+missing values and boxed/coercible objects are rejected with
+`OwnedQuoteMathError` code `overflow`; they are never converted implicitly.
+Use `parseOwnedAmount` to convert a user-entered decimal string into base units.
+
 ```ts
 import {
   parseOwnedAmount, formatOwnedAmount,
@@ -206,6 +212,11 @@ independent full intent and follow the same simulation/signing workflow.
 For self-custody locks, `buildCreateSelfLiquidityLock` accepts owner, mint, amount,
 nonce, permanent mode and unlock timestamp. It derives the lock/vault and uses the
 owner's source ATA; validate the account balance and rent before signing.
+Amounts/nonces/timestamps require primitive `bigint` values, and permanent mode
+requires a boolean. Async lock builders capture their request fields before
+address derivation. `decodeLiquidityLock` copies the account bytes and captures
+identity/context fields before asynchronous validation, so later caller mutation
+does not change the request or decoded state.
 `decodeLiquidityLock` checks the lock's identity and layout, and
 `assertLiquidityLockVault` verifies custody and rejects external delegation or
 close authority. Timed locks must meet `MIN_LOCK_SECONDS`; extension cannot shorten
