@@ -1,3 +1,4 @@
+import { OWNED_IDL_METADATA } from "./owned-idl-metadata.js";
 import {
   address,
   getAddressDecoder,
@@ -27,28 +28,13 @@ const CURRENT_SCHEMA_VERSION = 1;
 const TOKEN_DECIMALS_V1 = 6;
 const MAX_FEE_BPS = 1_000;
 
-export const OWNED_ACCOUNT_LAYOUTS = {
-  protocolConfig: {
-    discriminator: [207, 91, 250, 28, 152, 179, 215, 209],
-    size: 331,
-  },
-  launchConfig: {
-    discriminator: [18, 161, 9, 224, 102, 145, 29, 94],
-    size: 160,
-  },
-  curve: {
-    discriminator: [191, 180, 249, 66, 180, 71, 51, 182],
-    size: 421,
-  },
-  swapConfig: {
-    discriminator: [212, 45, 70, 222, 245, 122, 125, 166],
-    size: 202,
-  },
-  pool: {
-    discriminator: [241, 154, 109, 4, 17, 177, 109, 188],
-    size: 409,
-  },
-} as const;
+export const OWNED_ACCOUNT_LAYOUTS = Object.freeze({
+  protocolConfig: OWNED_IDL_METADATA.archCurve.accounts.ProtocolConfig,
+  launchConfig: OWNED_IDL_METADATA.archCurve.accounts.LaunchConfig,
+  curve: OWNED_IDL_METADATA.archCurve.accounts.Curve,
+  swapConfig: OWNED_IDL_METADATA.archSwap.accounts.SwapConfig,
+  pool: OWNED_IDL_METADATA.archSwap.accounts.Pool,
+});
 
 export type QuoteKind = "sol" | "usdc";
 

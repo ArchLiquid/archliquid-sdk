@@ -1,5 +1,7 @@
+import { OWNED_IDL_METADATA } from "./owned-idl-metadata.js";
 import {
   getAddressDecoder,
+  getBase64Decoder,
   getBase64Encoder,
   type Address,
   type ReadonlyUint8Array,
@@ -15,20 +17,23 @@ import type { OwnedProgramName } from "./owned-program-instructions.js";
 
 const MAX_LOG_MESSAGES = 1_000;
 const MAX_EVENT_BYTES = 512;
+const MAX_ENCODED_EVENT_CHARS = 4 * Math.ceil(MAX_EVENT_BYTES / 3);
+const MAX_LOG_MESSAGE_CHARS = 16_384;
+const MAX_TOTAL_LOG_CHARS = 1_048_576;
 const MAX_EVENTS_PER_TRANSACTION = 100;
 const MAX_TOTAL_FEE_BPS = 1_000;
 
-export const OWNED_EVENT_DISCRIMINATORS = {
-  CurveCreated: [207, 148, 202, 45, 236, 100, 171, 230],
-  CurveFeesClaimed: [134, 227, 212, 155, 241, 169, 9, 62],
-  CurveMigrated: [73, 99, 54, 46, 71, 35, 47, 242],
-  CurveTrade: [84, 229, 77, 39, 245, 87, 49, 105],
-  CanonicalPoolInitialized: [90, 203, 56, 77, 28, 155, 147, 19],
-  LiquidityDeposited: [218, 155, 74, 193, 59, 66, 94, 122],
-  LiquidityWithdrawn: [240, 120, 73, 139, 154, 31, 218, 68],
-  PoolFeesClaimed: [172, 6, 248, 216, 198, 124, 73, 110],
-  PoolTrade: [190, 27, 154, 233, 45, 9, 73, 222],
-} as const;
+export const OWNED_EVENT_DISCRIMINATORS = Object.freeze({
+  CurveCreated: OWNED_IDL_METADATA.archCurve.events.CurveCreated,
+  CurveFeesClaimed: OWNED_IDL_METADATA.archCurve.events.CurveFeesClaimed,
+  CurveMigrated: OWNED_IDL_METADATA.archCurve.events.CurveMigrated,
+  CurveTrade: OWNED_IDL_METADATA.archCurve.events.CurveTrade,
+  CanonicalPoolInitialized: OWNED_IDL_METADATA.archSwap.events.CanonicalPoolInitialized,
+  LiquidityDeposited: OWNED_IDL_METADATA.archSwap.events.LiquidityDeposited,
+  LiquidityWithdrawn: OWNED_IDL_METADATA.archSwap.events.LiquidityWithdrawn,
+  PoolFeesClaimed: OWNED_IDL_METADATA.archSwap.events.PoolFeesClaimed,
+  PoolTrade: OWNED_IDL_METADATA.archSwap.events.PoolTrade,
+});
 
 export type OwnedTradeSide = "buy" | "sell";
 export type OwnedFeeKind = "creator" | "protocol";
@@ -147,6 +152,7 @@ export type OwnedProgramEvent =
 
 const addressDecoder = getAddressDecoder();
 const base64Encoder = getBase64Encoder();
+const base64Decoder = getBase64Decoder();
 
 class EventCursor {
   private offset = 8;
@@ -368,11 +374,20 @@ function programName(value: string): OwnedProgramName | null {
   return null;
 }
 
-export function decodeOwnedProgramEvents(logMessages: readonly string[]): readonly OwnedProgramEvent[] {
+function decodeEvents(logMessages: readonly string[], committedOnly: boolean): readonly OwnedProgramEvent[] {
+  if (!Array.isArray(logMessages)) throw new Error("Transaction log messages are unavailable");
   if (logMessages.length > MAX_LOG_MESSAGES) throw new Error("Transaction log count exceeds the owned-event cap");
-  const invocationStack: string[] = [];
+  const invocationStack: { program: string; firstEvent: number }[] = [];
   const events: OwnedProgramEvent[] = [];
+  let totalLogChars = 0;
+  let emittedEventCount = 0;
   for (const message of logMessages) {
+    if (typeof message !== "string" || message.length > MAX_LOG_MESSAGE_CHARS) {
+      throw new Error("Transaction log message exceeds the owned-event size cap");
+    }
+    totalLogChars += message.length;
+    if (totalLogChars > MAX_TOTAL_LOG_CHARS) throw new Error("Transaction log size exceeds the owned-event cap");
+    if (message === "Log truncated") throw new Error("Transaction logs are truncated");
     const invoke = /^Program ([1-9A-HJ-NP-Za-km-z]{32,44}) invoke \[(\d+)]$/.exec(message);
     if (invoke) {
       const depth = Number(invoke[2]);
@@ -382,36 +397,73 @@ export function decodeOwnedProgramEvents(logMessages: readonly string[]): readon
       }
       const invokedProgram = invoke[1];
       if (!invokedProgram) throw new Error("Program log invocation is invalid");
-      invocationStack.push(invokedProgram);
+      invocationStack.push({ program: invokedProgram, firstEvent: events.length });
       continue;
     }
     const exit = /^Program ([1-9A-HJ-NP-Za-km-z]{32,44}) (success|failed: .+)$/.exec(message);
     if (exit) {
-      if (invocationStack.at(-1) !== exit[1]) {
+      if (invocationStack.at(-1)?.program !== exit[1]) {
         throw new Error("Program log exit stack is inconsistent");
       }
-      invocationStack.pop();
+      const exited = invocationStack.pop()!;
+      // Conservatively omit all emissions from a failed invocation subtree.
+      // Successful parent emissions outside it remain eligible for indexing.
+      if (committedOnly && exit[2] !== "success") events.splice(exited.firstEvent);
       continue;
     }
     if (!message.startsWith("Program data: ")) continue;
-    const activeProgram = programName(invocationStack.at(-1) ?? "");
+    const activeProgram = programName(invocationStack.at(-1)?.program ?? "");
     if (!activeProgram) continue;
+    const encoded = message.slice("Program data: ".length);
+    // Bound before the decoder allocates its output, then reject noncanonical
+    // padding/unused bits so a payload has a single accepted representation.
+    if (encoded.length > MAX_ENCODED_EVENT_CHARS) throw new Error("Owned program event size is invalid");
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
+      throw new Error("Owned program event data is not canonical base64");
+    }
     let bytes: Uint8Array;
     try {
-      bytes = new Uint8Array(base64Encoder.encode(message.slice("Program data: ".length)));
+      bytes = new Uint8Array(base64Encoder.encode(encoded));
     } catch {
       throw new Error("Owned program event data is not canonical base64");
     }
+    if (base64Decoder.decode(bytes) !== encoded) throw new Error("Owned program event data is not canonical base64");
     if (bytes.length < 8 || bytes.length > MAX_EVENT_BYTES) throw new Error("Owned program event size is invalid");
     const decoded = activeProgram === "archCurve"
       ? decodeCurveEvent(bytes, events.length)
       : decodeSwapEvent(bytes, events.length);
     if (!decoded) continue;
     events.push(decoded);
-    if (events.length > MAX_EVENTS_PER_TRANSACTION) throw new Error("Transaction exceeds the owned-event cap");
+    emittedEventCount += 1;
+    if (emittedEventCount > MAX_EVENTS_PER_TRANSACTION) throw new Error("Transaction exceeds the owned-event cap");
   }
   if (invocationStack.length !== 0) throw new Error("Program log invocation stack is incomplete");
   return Object.freeze(events);
+}
+
+/** Decode raw emissions for diagnostics, including events from failed invocations.
+ * Do not use this result as evidence that transaction state changes committed.
+ */
+export function decodeOwnedProgramEvents(logMessages: readonly string[]): readonly OwnedProgramEvent[] {
+  return decodeEvents(logMessages, false);
+}
+
+export type OwnedTransactionEventSource = Readonly<{
+  logMessages: readonly string[] | null;
+  err: unknown;
+}>;
+
+/** Decode committed events using complete, trusted RPC transaction metadata.
+ * An explicit null err is required. Failed transactions are rejected; failed
+ * invocation subtrees are conservatively omitted, including successful children.
+ * Successful events are returned in log order with contiguous event indices.
+ */
+export function decodeOwnedTransactionEvents(transaction: OwnedTransactionEventSource): readonly OwnedProgramEvent[] {
+  if (transaction === null || typeof transaction !== "object" || transaction.err !== null) {
+    throw new Error("Committed owned events require an explicitly successful transaction");
+  }
+  if (transaction.logMessages === null) throw new Error("Transaction log messages are unavailable");
+  return decodeEvents(transaction.logMessages, true);
 }
 
 export function assertCanonicalMigrationEventPair(events: readonly OwnedProgramEvent[]) {
