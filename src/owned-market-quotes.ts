@@ -1,4 +1,4 @@
-import type { Address, Slot } from "@solana/kit";
+import { isAddress, type Address, type Slot } from "@solana/kit";
 
 import type {
   DecodedCurve,
@@ -26,7 +26,7 @@ const DEFAULT_VALIDITY_SLOTS = 150n;
 const DEFAULT_VALIDITY_MS = 60_000;
 const MAX_U64 = (1n << 64n) - 1n;
 
-type CurveQuoteSource = Readonly<{
+export type CurveQuoteSource = Readonly<{
   slot: Slot;
   curve: Pick<
     DecodedCurve,
@@ -44,12 +44,12 @@ type CurveQuoteSource = Readonly<{
   }>;
 }>;
 
-type PoolQuoteSource = Readonly<{
+export type PoolQuoteSource = Readonly<{
   slot: Slot;
   pool: Pick<DecodedPool, "baseMint" | "quoteMint" | "baseReserves" | "quoteReserves" | "fees">;
 }>;
 
-type PoolLiquidityQuoteSource = Readonly<{
+export type PoolLiquidityQuoteSource = Readonly<{
   slot: Slot;
   pool: Pick<
     DecodedPool,
@@ -62,7 +62,7 @@ type PoolLiquidityQuoteSource = Readonly<{
   >;
 }>;
 
-type QuoteTimingOptions = Readonly<{
+export type QuoteTimingOptions = Readonly<{
   observedAtUnixMs?: number;
   validitySlots?: bigint;
   validityMs?: number;
@@ -100,7 +100,10 @@ function quoteTiming(slot: Slot, options: QuoteTimingOptions = {}) {
   if (!Number.isSafeInteger(observedAtUnixMs) || observedAtUnixMs < 0) {
     throw new Error("Quote observation timestamp is invalid");
   }
-  if (slot < 0n || slot > MAX_U64 || validitySlots <= 0n || slot + validitySlots > MAX_U64) {
+  if (
+    typeof slot !== "bigint" || slot < 0n || slot > MAX_U64 ||
+    typeof validitySlots !== "bigint" || validitySlots <= 0n || slot + validitySlots > MAX_U64
+  ) {
     throw new Error("Quote slot validity is invalid");
   }
   if (!Number.isSafeInteger(validityMs) || validityMs <= 0) {
@@ -116,13 +119,25 @@ function quoteTiming(slot: Slot, options: QuoteTimingOptions = {}) {
   };
 }
 
+// Quote arithmetic returns only plain objects with primitive values. Freeze the
+// newly created result, never the caller's source account snapshot.
+function freezeQuoteResult<T>(value: T): T {
+  if (value !== null && typeof value === "object") {
+    for (const nested of Object.values(value)) freezeQuoteResult(nested);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 function bindQuote<T>(
   identity: Pick<OwnedMarketQuote<T>, "venue" | "side" | "inputMode" | "baseMint" | "quoteMint">,
   sourceSlot: Slot,
   result: T,
   options?: QuoteTimingOptions,
 ): OwnedMarketQuote<T> {
-  return Object.freeze({ ...identity, ...quoteTiming(sourceSlot, options), result });
+  const quote = { ...identity, ...quoteTiming(sourceSlot, options), result: freezeQuoteResult(result) };
+  assertOwnedMarketQuoteValidEnvelope(quote);
+  return Object.freeze(quote);
 }
 
 function bindLiquidityQuote<T>(
@@ -131,14 +146,16 @@ function bindLiquidityQuote<T>(
   result: T,
   options?: QuoteTimingOptions,
 ): OwnedPoolLiquidityQuote<T> {
-  return Object.freeze({
-    venue: "pool",
+  const quote = {
+    venue: "pool" as const,
     action,
     baseMint: source.pool.baseMint,
     quoteMint: source.pool.quoteMint,
     ...quoteTiming(source.slot, options),
-    result,
-  });
+    result: freezeQuoteResult(result),
+  };
+  assertOwnedMarketQuoteValidEnvelope(quote);
+  return Object.freeze(quote);
 }
 
 function assertCurveTradable(source: CurveQuoteSource) {
@@ -326,15 +343,58 @@ export function createPoolWithdrawLiquidityQuote(
   return bindLiquidityQuote(source, "withdraw", result, options);
 }
 
+/** Validate identity and timing, including quotes reconstructed from storage.
+ * This does not authenticate the source accounts or validate generic result data.
+ */
+export function assertOwnedMarketQuoteValidEnvelope(
+  quote: OwnedMarketQuote<unknown> | OwnedPoolLiquidityQuote<unknown>,
+): void {
+  if (quote === null || typeof quote !== "object") throw new Error("Owned market quote envelope is invalid");
+  if (quote.venue !== "curve" && quote.venue !== "pool") throw new Error("Owned market quote venue is invalid");
+  if ("action" in quote) {
+    if (quote.venue !== "pool" || (quote.action !== "deposit" && quote.action !== "withdraw")) {
+      throw new Error("Owned liquidity quote action is invalid");
+    }
+    if ("side" in quote || "inputMode" in quote) throw new Error("Owned liquidity quote identity is ambiguous");
+  } else if (
+    (quote.side !== "buy" && quote.side !== "sell") ||
+    (quote.inputMode !== "exact-base" && quote.inputMode !== "exact-quote") ||
+    (quote.side === "sell" && quote.inputMode !== "exact-base")
+  ) {
+    throw new Error("Owned market quote trade identity is invalid");
+  }
+  if (
+    typeof quote.baseMint !== "string" || !isAddress(quote.baseMint) ||
+    typeof quote.quoteMint !== "string" || !isAddress(quote.quoteMint)
+  ) {
+    throw new Error("Owned market quote mint is invalid");
+  }
+  if (
+    typeof quote.sourceSlot !== "bigint" || quote.sourceSlot < 0n || quote.sourceSlot > MAX_U64 ||
+    typeof quote.expiresAtSlot !== "bigint" || quote.expiresAtSlot > MAX_U64 ||
+    quote.expiresAtSlot <= quote.sourceSlot
+  ) {
+    throw new Error("Owned market quote slot envelope is invalid");
+  }
+  if (
+    !Number.isSafeInteger(quote.observedAtUnixMs) || quote.observedAtUnixMs < 0 ||
+    !Number.isSafeInteger(quote.expiresAtUnixMs) || quote.expiresAtUnixMs <= quote.observedAtUnixMs
+  ) {
+    throw new Error("Owned market quote timestamp envelope is invalid");
+  }
+  if (!("result" in quote)) throw new Error("Owned market quote result is missing");
+}
+
 export function assertOwnedMarketQuoteFresh(
   quote: OwnedMarketQuote<unknown> | OwnedPoolLiquidityQuote<unknown>,
   currentSlot: Slot,
   currentUnixMs = Date.now(),
 ) {
+  assertOwnedMarketQuoteValidEnvelope(quote);
   if (!Number.isSafeInteger(currentUnixMs) || currentUnixMs < 0) {
     throw new Error("Current quote timestamp is invalid");
   }
-  if (currentSlot < 0n || currentSlot > MAX_U64) {
+  if (typeof currentSlot !== "bigint" || currentSlot < 0n || currentSlot > MAX_U64) {
     throw new Error("Current quote slot is invalid");
   }
   if (currentSlot >= quote.expiresAtSlot || currentUnixMs >= quote.expiresAtUnixMs) {

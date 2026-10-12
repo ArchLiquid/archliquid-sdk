@@ -15,8 +15,17 @@ import {
   SPL_TOKEN_PROGRAM_ADDRESS,
   SYSTEM_PROGRAM_ADDRESS,
 } from "./addresses.js";
+import { OWNED_IDL_SHA256 } from "./deployment.js";
 
 const MAX_U64 = (1n << 64n) - 1n;
+
+function freezeSchema<T>(value: T): T {
+  if (value !== null && typeof value === "object") {
+    for (const child of Object.values(value)) freezeSchema(child);
+    Object.freeze(value);
+  }
+  return value;
+}
 
 type AccountSchema = Readonly<{
   name: string;
@@ -98,10 +107,10 @@ const SELL_EXACT_BASE_IN_ARGS = [
  * Administrative initialization and configuration instructions are
  * deliberately unavailable to the public application builder.
  */
-export const OWNED_SOLANA_PROGRAMS = {
+export const OWNED_SOLANA_PROGRAMS = freezeSchema({
   archCurve: {
     programAddress: ARCH_CURVE_PROGRAM_ADDRESS,
-    idlSha256: "fde22f26875647a07a030e94c12492097c28ed4a8cc243f1e5b380b827ef4a7a",
+    idlSha256: OWNED_IDL_SHA256.archCurve,
     instructions: {
       create_curve: {
         discriminator: [169, 235, 221, 223, 65, 109, 120, 183],
@@ -213,7 +222,7 @@ export const OWNED_SOLANA_PROGRAMS = {
   },
   archSwap: {
     programAddress: ARCH_SWAP_PROGRAM_ADDRESS,
-    idlSha256: "90c5b2a6aedfb3d4393724f4ecb80b7e805051a74d7d3d7a7fc7236860757cda",
+    idlSha256: OWNED_IDL_SHA256.archSwap,
     instructions: {
       buy_exact_base_out: {
         discriminator: [122, 161, 65, 178, 68, 116, 77, 81],
@@ -275,7 +284,7 @@ export const OWNED_SOLANA_PROGRAMS = {
       },
     },
   },
-} as const;
+} as const);
 
 export type OwnedProgramName = keyof typeof OWNED_SOLANA_PROGRAMS;
 export type OwnedInstructionName =
@@ -299,6 +308,63 @@ export type OwnedInstructionArgumentValue =
   | bigint
   | TokenMetadataInstructionInput
   | ReadonlyUint8Array;
+
+type ProgramInstructionSchemas<P extends OwnedProgramName> =
+  (typeof OWNED_SOLANA_PROGRAMS)[P]["instructions"];
+
+export type OwnedInstructionNameForProgram<P extends OwnedProgramName> =
+  keyof ProgramInstructionSchemas<P> & string;
+
+type SchemaFor<
+  P extends OwnedProgramName,
+  N extends OwnedInstructionNameForProgram<P>,
+> = ProgramInstructionSchemas<P>[N] extends InstructionSchema
+  ? ProgramInstructionSchemas<P>[N]
+  : never;
+
+/** Fixed program/sysvar accounts are filled by the builder and may be omitted. */
+export type OwnedInstructionAccounts<
+  P extends OwnedProgramName,
+  N extends OwnedInstructionNameForProgram<P>,
+> = Readonly<{
+  [A in SchemaFor<P, N>["accounts"][number] as A extends { address: string }
+    ? never : A["name"]]: string;
+} & {
+  [A in SchemaFor<P, N>["accounts"][number] as A extends { address: string }
+    ? A["name"] : never]?: string;
+}>;
+
+type ArgumentValue<A extends ArgumentSchema> = A["type"] extends "u64"
+  ? bigint
+  : A["type"] extends { defined: { name: "TokenMetadataInput" } }
+    ? TokenMetadataInstructionInput
+    : ReadonlyUint8Array;
+
+export type OwnedInstructionArgs<
+  P extends OwnedProgramName,
+  N extends OwnedInstructionNameForProgram<P>,
+> = SchemaFor<P, N>["args"] extends readonly []
+  ? Readonly<Record<string, never>>
+  : Readonly<{ [A in SchemaFor<P, N>["args"][number] as A["name"]]: ArgumentValue<A> }>;
+
+/** A correlated input with required arguments and required non-fixed accounts. */
+export type OwnedInstructionInputFor<
+  P extends OwnedProgramName,
+  N extends OwnedInstructionNameForProgram<P>,
+> = Readonly<{
+  program: P;
+  instruction: N;
+  accounts: OwnedInstructionAccounts<P, N>;
+}> & (SchemaFor<P, N>["args"] extends readonly []
+  ? Readonly<{ args?: OwnedInstructionArgs<P, N> }>
+  : Readonly<{ args: OwnedInstructionArgs<P, N> }>);
+
+/** Discriminated union of every supported public program/instruction pair. */
+export type TypedOwnedInstructionInput = {
+  [P in OwnedProgramName]: {
+    [N in OwnedInstructionNameForProgram<P>]: OwnedInstructionInputFor<P, N>;
+  }[OwnedInstructionNameForProgram<P>];
+}[OwnedProgramName];
 
 export type DecodedOwnedInstruction = Readonly<{
   program: OwnedProgramName;
@@ -348,6 +414,11 @@ function checkedMetadata(
   ) {
     throw new Error(`Missing or invalid ${name} argument`);
   }
+  // UTF-8 needs at least as many bytes as UTF-16 code units, including
+  // surrogate replacement. Reject oversized strings before allocating bytes.
+  if (candidate.name.length < 1 || candidate.name.length > 32) throw new Error("Invalid metadata name bytes");
+  if (candidate.symbol.length < 1 || candidate.symbol.length > 10) throw new Error("Invalid metadata symbol bytes");
+  if (candidate.uri.length < 1 || candidate.uri.length > 200) throw new Error("Invalid metadata URI bytes");
   const nameBytes = utf8Encoder.encode(candidate.name);
   const symbolBytes = utf8Encoder.encode(candidate.symbol);
   const uriBytes = utf8Encoder.encode(candidate.uri);
@@ -437,7 +508,15 @@ export function buildOwnedInstruction(input: OwnedInstructionInput): Instruction
   };
 }
 
-function bytesEqual(left: readonly number[], right: ReadonlyUint8Array) {
+/**
+ * Build the same wire instruction as buildOwnedInstruction with a correlated
+ * TypeScript input. Account values and argument ranges remain runtime-checked.
+ */
+export function buildTypedOwnedInstruction(input: TypedOwnedInstructionInput): Instruction {
+  return buildOwnedInstruction(input);
+}
+
+function bytesEqual(left: readonly number[] | ReadonlyUint8Array, right: ReadonlyUint8Array) {
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
@@ -560,10 +639,34 @@ export function decodeOwnedInstruction(
   };
 }
 
+/**
+ * Validate the public instruction schema, program, ordered accounts and roles.
+ * This legacy assertion decodes argument values but does not compare them with
+ * approved amounts, limits or metadata. Use assertOwnedInstructionMatchesIntent
+ * before signing to validate arguments against an independently approved intent.
+ */
 export function assertOwnedInstructionSignable(
   instruction: Instruction,
   expectation: Pick<OwnedInstructionInput, "program" | "instruction" | "accounts">,
 ) {
   const decoded = decodeOwnedInstruction(instruction, expectation);
+  return decoded;
+}
+
+/**
+ * Validate the exact approved instruction intent: program, ordered accounts,
+ * roles, discriminator, and every encoded argument byte. Keep the approved
+ * intent independently from the instruction being checked; deriving it from
+ * that instruction would not establish user authorization.
+ */
+export function assertOwnedInstructionMatchesIntent(
+  instruction: Instruction,
+  intent: OwnedInstructionInput,
+): DecodedOwnedInstruction {
+  const approved = buildOwnedInstruction(intent);
+  const decoded = decodeOwnedInstruction(instruction, intent);
+  if (!approved.data || !instruction.data || !bytesEqual(approved.data, instruction.data)) {
+    throw new Error(`Unexpected ${intent.instruction} instruction arguments`);
+  }
   return decoded;
 }

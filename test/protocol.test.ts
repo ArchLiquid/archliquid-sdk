@@ -98,7 +98,7 @@ test("builds, decodes, and substitution-checks public LP instructions", () => {
   );
 });
 
-test("matches Curve and AMM Rust rounding vectors", () => {
+test("matches retained Curve and AMM rounding vectors", () => {
   const curve = { virtualBase: 1_000_000n, virtualQuote: 100_000n, realSaleBase: 800_000n, realQuote: 50_000n };
   assert.deepEqual(calculateCurveBuyExactBaseOut(curve, 100_000n, MAX_U64, 125, 30), {
     baseAmountOut: 100_000n,

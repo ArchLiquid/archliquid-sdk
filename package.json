@@ -6,7 +6,11 @@
   "type": "module",
   "files": [
     "dist",
-    "idl"
+    "idl",
+    "docs",
+    "examples",
+    "SECURITY.md",
+    "CHANGELOG.md"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -15,6 +19,18 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./math": {
+      "types": "./dist/owned-quote-math.d.ts",
+      "import": "./dist/owned-quote-math.js"
+    },
+    "./accounts": {
+      "types": "./dist/owned-program-accounts.d.ts",
+      "import": "./dist/owned-program-accounts.js"
+    },
+    "./instructions": {
+      "types": "./dist/owned-program-instructions.d.ts",
+      "import": "./dist/owned-program-instructions.js"
+    },
     "./idl/arch-curve": "./idl/arch_curve.json",
     "./idl/arch-swap": "./idl/arch_swap.json",
     "./idl/arch-locker": "./idl/arch_locker.json"
@@ -22,8 +38,14 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts",
-    "check": "npm run typecheck && npm test && npm run build"
+    "verify:idl": "node --import tsx scripts/verify-idl.mjs",
+    "generate:idl": "node scripts/generate-idl-metadata.mjs",
+    "check:package": "node scripts/check-package.mjs",
+    "check:reference": "node --import tsx scripts/check-reference-quotes.mjs",
+    "check:devnet": "node --import tsx scripts/check-devnet.mjs",
+    "prepack": "npm run verify:idl -- --require-lf && npm run build && node scripts/check-package.mjs --verify-artifacts",
+    "test": "node scripts/run-tests.mjs",
+    "check": "npm run verify:idl && npm run typecheck && npm test && npm run build"
   },
   "engines": {
     "node": ">=20.18.0"

@@ -153,9 +153,9 @@ export function decodeLegacyTokenAccount(
   if (
     nativeRentReserve !== null &&
     input.lamports !== undefined &&
-    input.lamports !== amount + nativeRentReserve
+    input.lamports < amount + nativeRentReserve
   ) {
-    throw new Error("Native token amount does not reconcile with account lamports");
+    throw new Error("Native token amount is not backed by account lamports");
   }
   return {
     address: accountAddress,
@@ -169,6 +169,34 @@ export function decodeLegacyTokenAccount(
     closeAuthority,
     ...(input.lamports === undefined ? {} : { lamports: input.lamports }),
   };
+}
+
+/**
+ * Returns SOL transferred into a native token account since its last SyncNative.
+ * The token amount remains authoritative for token transfers until synchronized.
+ * Requires the account's observed lamports so custody can be checked.
+ */
+export function getLegacyNativeTokenAccountSurplus(
+  account: DecodedLegacyTokenAccount,
+): bigint {
+  if (account.nativeRentReserve === null || account.mint !== SOL_QUOTE_MINT_ADDRESS) {
+    throw new Error("Account is not a native legacy SPL token account");
+  }
+  if (account.lamports === undefined) {
+    throw new Error("Native token account requires observed lamports");
+  }
+  const surplus = account.lamports - account.amount - account.nativeRentReserve;
+  if (surplus < 0n) throw new Error("Native token amount is not backed by account lamports");
+  return surplus;
+}
+
+/** Requires SyncNative to have reconciled the account's amount and lamports. */
+export function assertLegacyNativeTokenAccountSynchronized(
+  account: DecodedLegacyTokenAccount,
+) {
+  if (getLegacyNativeTokenAccountSurplus(account) !== 0n) {
+    throw new Error("Native token account requires SyncNative");
+  }
 }
 
 export function assertFixedSupplyLaunchMint(
@@ -223,6 +251,7 @@ function assertVault(
   if (expectNative && tokenAccount.lamports === undefined) {
     throw new Error(`${fieldName} requires lamports to verify native-token custody`);
   }
+  if (expectNative) getLegacyNativeTokenAccountSurplus(tokenAccount);
   if (tokenAccount.amount < minimumAmount) {
     throw new Error(`${fieldName} balance is below decoded accounting`);
   }

@@ -13,11 +13,15 @@ import {
 import {
   ARCH_LOCKER_PROGRAM_ADDRESS,
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  SOL_QUOTE_MINT_ADDRESS,
   SPL_TOKEN_PROGRAM_ADDRESS,
   SYSTEM_PROGRAM_ADDRESS,
 } from "./addresses.js";
 import { deriveAssociatedTokenAddress } from "./owned-program-pdas.js";
-import type { DecodedLegacyTokenAccount } from "./legacy-token-accounts.js";
+import {
+  getLegacyNativeTokenAccountSurplus,
+  type DecodedLegacyTokenAccount,
+} from "./legacy-token-accounts.js";
 
 export const LOCK_ACCOUNT_SIZE = 267;
 export const MIN_LOCK_SECONDS = 30n * 24n * 60n * 60n;
@@ -57,10 +61,15 @@ export function assertLiquidityLockVault(
     vault.mint !== lock.mint ||
     vault.authority !== lock.address ||
     vault.state !== "initialized" ||
-    vault.amount < lock.principalAmount
+    vault.amount < lock.principalAmount ||
+    vault.delegate !== null ||
+    vault.delegatedAmount !== 0n ||
+    vault.closeAuthority !== null ||
+    (vault.nativeRentReserve !== null) !== (lock.mint === SOL_QUOTE_MINT_ADDRESS)
   ) {
     throw new Error("Liquidity lock vault custody does not reconcile");
   }
+  if (lock.mint === SOL_QUOTE_MINT_ADDRESS) getLegacyNativeTokenAccountSurplus(vault);
 }
 
 function u64(value: bigint) {
@@ -108,9 +117,8 @@ export async function buildCreateSelfLiquidityLock(input: Readonly<{
   if (input.amount <= 0n || input.amount > MAX_U64) throw new Error("Lock amount is invalid");
   if (input.permanent && input.unlockAt !== 0n) throw new Error("Permanent lock timestamp must be zero");
   if (!input.permanent && input.unlockAt <= 0n) throw new Error("Timed lock timestamp is invalid");
-  const [lock, source, beneficiaryAccount] = await Promise.all([
+  const [lock, source] = await Promise.all([
     deriveLiquidityLockAddress(owner, input.nonce),
-    deriveAssociatedTokenAddress(owner, mint),
     deriveAssociatedTokenAddress(owner, mint),
   ]);
   const vault = await deriveAssociatedTokenAddress(lock.address, mint);
@@ -121,7 +129,7 @@ export async function buildCreateSelfLiquidityLock(input: Readonly<{
       { address: owner, role: AccountRole.READONLY_SIGNER },
       { address: mint, role: AccountRole.READONLY },
       { address: source.address, role: AccountRole.WRITABLE },
-      { address: beneficiaryAccount.address, role: AccountRole.WRITABLE },
+      { address: source.address, role: AccountRole.WRITABLE },
       { address: lock.address, role: AccountRole.WRITABLE },
       { address: vault.address, role: AccountRole.WRITABLE },
       { address: SPL_TOKEN_PROGRAM_ADDRESS, role: AccountRole.READONLY },
